@@ -3,55 +3,104 @@ import configuration
 import data
 import sender_stand_request
 
-def new_kit (kit_data): # Crear un nuevo kit
-    response = requests.post(configuration.URL_SERVICE + configuration.KITS_PATH, json=kit_data, headers=data.headers_token)
+
+# Función para obtener token válido
+def get_new_user_token():
+    user_body = data.user_body
+    response = sender_stand_request.post_new_user(user_body)
+    assert response.status_code == 201
+    return response.json()["authToken"]
+
+
+# Función para crear el cuerpo del kit con nombre
+def get_kit_body(name):
+    return {
+        "name": name
+    }
+
+
+# Función para verificar respuesta positiva (status code 201)
+def positive_assert(kit_body):
+    token = get_new_user_token()
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(
+        url=configuration.URL_SERVICE + configuration.KITS_PATH,
+        json=kit_body,
+        headers=headers
+    )
     print("Código de estado:", response.status_code)
     print("Respuesta:", response.json())
+    assert response.status_code == 201
+    assert response.json()["name"] == kit_body["name"]
 
-def get_user_body (first_name): # Modificar la variable "first_name" en el cuerpo de la solicitud en cada prueba
-    current_body = data.user_body.copy()
-    current_body["firstName"] = first_name
-    return current_body
 
-def positive_assert (first_name): # Se define la funcion positiva que usaremos en las siguientes pruebas
-    user_body = get_user_body(first_name)
-    user_response = sender_stand_request.post_new_user(user_body)
-    assert user_response.status_code == 201
-    assert user_response.json()["authToken"] != ""
-
-def test_first_name_511_character (): # 511 caracteres en el campo first_name
-    positive_assert("AbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdAbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabC")
-
-def test_first_name_1_character (): # 1 caraster en el campo first_name
-    positive_assert("a")
-
-def test_first_name_0_character (): # Campo first_name vacio
-    positive_assert("")
-
-def test_first_name_1_character (): # 512 caracteres en el campo first_name
-    positive_assert("AbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdAbcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabca")
-
-def test_first_name_0_character (): # Caracteres especiales en el campo first_name
-    positive_assert("№%@,")
-
-def test_first_name_0_character (): # Espacios en el campo first_name
-    positive_assert("A aa")
-
-def test_first_name_0_character (): # Numeros en el campo first_name
-    positive_assert("123")
-
-def negative_assert_no_firstname(user_body): # Definicion de prueba negativa
-    response = sender_stand_request.post_new_user(user_body)
+# Función para verificar respuesta negativa (status code 400)
+def negative_assert_code_400(kit_body):
+    token = get_new_user_token()
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.post(
+        url=configuration.URL_SERVICE + configuration.KITS_PATH,
+        json=kit_body,
+        headers=headers
+    )
+    print("Código de estado:", response.status_code)
+    print("Respuesta:", response.json())
     assert response.status_code == 400
 
-def test_create_user_no_first_name_get_error_response(): # El parametro first_name no existe en la solicitud
-    user_body = data.user_body.copy()
-    user_body.pop("firstName")
 
-    negative_assert_no_firstname(user_body)
-    assert response.status_code == 400
+# ---------- TESTS POSITIVOS ----------
 
-def test_create_user_number_type_first_name_get_error_response(): # El parametro first_name contiene nuemeros
-    user_body = get_user_body(123)
-    response = sender_stand_request.post_new_user(user_body)
+def test_create_kit_name_1_character():
+    positive_assert(get_kit_body("A"))
+
+
+def test_create_kit_name_511_characters():
+    name = "A" * 511
+    positive_assert(get_kit_body(name))
+
+
+def test_create_kit_name_with_spaces():
+    positive_assert(get_kit_body("Kit de prueba"))
+
+
+def test_create_kit_name_with_numbers():
+    positive_assert(get_kit_body("Kit123"))
+
+
+def test_create_kit_name_with_special_characters():
+    positive_assert(get_kit_body("Kit@#$_"))
+
+
+# ---------- TESTS NEGATIVOS ----------
+
+def test_create_kit_name_empty():
+    negative_assert_code_400(get_kit_body(""))
+
+
+def test_create_kit_name_more_than_511_characters():
+    name = "A" * 512
+    negative_assert_code_400(get_kit_body(name))
+
+
+def test_create_kit_name_missing_parameter():
+    token = get_new_user_token()
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+    # Kit sin parámetro "name"
+    kit_body = {}
+    response = requests.post(
+        url=configuration.URL_SERVICE + configuration.KITS_PATH,
+        json=kit_body,
+        headers=headers
+    )
+    print("Código de estado:", response.status_code)
+    print("Respuesta:", response.json())
     assert response.status_code == 400

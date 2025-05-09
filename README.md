@@ -1,11 +1,18 @@
 # Proyecto Urban Grocers
 
-En el repositorio qa-project-Urban-Grocers-app-es encontraras los siguientes archivos:
+Este proyecto contiene pruebas automatizadas de creacion de kits para la API de Urban Grocers
+utilizando Pytest. El objetivo principal es garantizar que la API maneja correctamente
+las solicitudes de kits, verificando tanto casos de pruebas positivas como negativas.
 
-configuration.py #Contiene la URL del servidor y sus endpoint respectivos para crear un nuevo usuario y crear un nuevo kit
-create_kit_name_kit_test.py #Contiene la creación de un nuevo kit y los casos de prueba automatizadas
-data.py #Almacena los diccionarios que que usaremos en los demas archivos
-sender_stand_request.py #Contiene la creación de un nuevo usuario
+Estructura del proyecto:
+configuration.py #Archivos de configuracion (URL, endpoint)
+data.py # Datos de prueba y configuraciones
+README.md # Descripcion del proyecto
+sender_stand_request.py # Envio de solicitud para crear un nuevo usuario
+create_kit_name_kit_test.py # Codigo de pruebas 
 
- 
-El proyecto tiene como objetivo automatizar casos de pruebas para el campo first_name en la seccion  "crear un nuevo usuario", realizando pruebas negativas y positivas
+Tecnologias necesarias:
+Python3
+Pytest
+Biblioteca requests
+
